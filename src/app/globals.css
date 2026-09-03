@@ -1,0 +1,333 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
+}
+
+body {
+  font-family: var(--font-inter), Inter, system-ui, -apple-system, sans-serif;
+  background: #f2f7f9;
+}
+
+.dark body {
+  background: #0b2531;
+  color: #dceaf0;
+}
+
+.font-display {
+  font-family: var(--font-jakarta), "Plus Jakarta Sans", system-ui, sans-serif;
+}
+
+/* Rolagem suave ao pular para uma âncora, descontando a altura do header fixo —
+   sem isso o título da seção fica escondido atrás dele. */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 6rem;
+}
+
+/* Foco visível e consistente em tudo que é navegável pelo teclado. O reset do
+   Tailwind remove o outline padrão do navegador, e sem repor isso o site fica
+   impossível de usar sem mouse. */
+:where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 2px solid #b45d0c;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Seta do <details> das perguntas frequentes: gira ao abrir. */
+details > summary {
+  list-style: none;
+}
+
+details > summary::-webkit-details-marker {
+  display: none;
+}
+
+details > summary::after {
+  content: "+";
+  float: right;
+  font-weight: 700;
+  transition: transform 0.2s ease;
+}
+
+details[open] > summary::after {
+  content: "−";
+}
+
+/* ------------------------------------------------------------------
+   Animações de entrada
+   ------------------------------------------------------------------
+   O conteúdo só é escondido quando `html` tem a classe `js`, adicionada pelo
+   RevealObserver. Esconder direto no CSS deixaria a página em branco para quem
+   estiver sem JavaScript — e para qualquer buscador que não execute script.  */
+
+.js [data-reveal] {
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+.js [data-reveal].is-visible {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Escalonamento dentro de uma grade: cada card entra um pouco depois do
+   anterior, o que lê como uma onda em vez de um bloco piscando junto. O limite
+   de 8 evita que o último item de uma lista longa demore demais. */
+.js [data-reveal-stagger] > * {
+  opacity: 0;
+  transform: translateY(18px);
+}
+
+.js [data-reveal-stagger].is-visible > * {
+  opacity: 1;
+  transform: none;
+  transition:
+    opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.js [data-reveal-stagger].is-visible > *:nth-child(1) { transition-delay: 0.02s; }
+.js [data-reveal-stagger].is-visible > *:nth-child(2) { transition-delay: 0.07s; }
+.js [data-reveal-stagger].is-visible > *:nth-child(3) { transition-delay: 0.12s; }
+.js [data-reveal-stagger].is-visible > *:nth-child(4) { transition-delay: 0.17s; }
+.js [data-reveal-stagger].is-visible > *:nth-child(5) { transition-delay: 0.22s; }
+.js [data-reveal-stagger].is-visible > *:nth-child(6) { transition-delay: 0.27s; }
+.js [data-reveal-stagger].is-visible > *:nth-child(7) { transition-delay: 0.32s; }
+.js [data-reveal-stagger].is-visible > *:nth-child(n + 8) { transition-delay: 0.36s; }
+
+/* Hero: entra por CSS puro, sem esperar JavaScript. É o conteúdo acima da
+   dobra e o LCP da home — atrasar isso por causa de hidratação seria trocar
+   desempenho por enfeite. */
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Zoom lentíssimo na foto de fundo. 18 segundos e apenas 6% de escala: dá
+   sensação de vida sem que o movimento chame atenção para si. */
+@keyframes hero-zoom {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.06);
+  }
+}
+
+.hero-photo {
+  animation: hero-zoom 18s ease-out forwards;
+}
+
+.hero-rise {
+  animation: hero-rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+.hero-rise-1 { animation-delay: 0.05s; }
+.hero-rise-2 { animation-delay: 0.15s; }
+.hero-rise-3 { animation-delay: 0.25s; }
+.hero-rise-4 { animation-delay: 0.35s; }
+.hero-rise-5 { animation-delay: 0.45s; }
+
+/* Pulso do botão de WhatsApp: anéis concêntricos saindo do ícone, como no site
+   antigo da Polisopor. São dois anéis com meio ciclo de diferença, o que produz
+   onda contínua em vez de piscada. */
+@keyframes wa-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  70% {
+    transform: scale(2.1);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(2.1);
+    opacity: 0;
+  }
+}
+
+.wa-ring {
+  animation: wa-ping 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+.wa-ring-2 {
+  animation-delay: 1.2s;
+}
+
+/* Respeita quem pediu menos movimento no sistema. Não é detalhe de acessibilidade
+   opcional: movimento involuntário provoca desconforto real em quem tem
+   sensibilidade vestibular, e o pulso do WhatsApp fica na tela o tempo todo. */
+@media (prefers-reduced-motion: reduce) {
+  .js [data-reveal],
+  .js [data-reveal-stagger] > * {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .hero-photo,
+  .hero-rise,
+  .wa-ring {
+    animation: none;
+  }
+
+  .wa-ring {
+    display: none;
+  }
+
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Impressão: as animações de entrada dependem de rolagem, e o que nunca foi
+   rolado ficaria invisível no papel. */
+@media print {
+  .js [data-reveal],
+  .js [data-reveal-stagger] > * {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .wa-ring {
+    display: none;
+  }
+}
+
+/* Conteúdo dos posts do blog.
+   O container usa a classe `prose`, mas o plugin @tailwindcss/typography não
+   está instalado — a classe não aplica nada e o reset do Tailwind zera
+   list-style e padding, deixando as listas sem marcador e sem recuo. */
+.prose h2 {
+  font-family: var(--font-jakarta), "Plus Jakarta Sans", system-ui, sans-serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  color: #235b72;
+}
+
+.dark .prose h2 {
+  color: #dceaf0;
+}
+
+.prose h3 {
+  font-family: var(--font-jakarta), "Plus Jakarta Sans", system-ui, sans-serif;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: #235b72;
+}
+
+.dark .prose h3 {
+  color: #dceaf0;
+}
+
+.prose p {
+  margin-bottom: 1rem;
+  line-height: 1.75;
+}
+
+.prose ul,
+.prose ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.prose ul {
+  list-style: disc outside;
+}
+
+.prose ol {
+  list-style: decimal outside;
+}
+
+.prose li {
+  margin-bottom: 0.375rem;
+  line-height: 1.7;
+}
+
+.prose li::marker {
+  color: #b45d0c;
+}
+
+.dark .prose li::marker {
+  color: #e8912f;
+}
+
+.prose strong {
+  font-weight: 600;
+  color: #123544;
+}
+
+.dark .prose strong {
+  color: #dceaf0;
+}
+
+.prose a {
+  color: #b45d0c;
+  text-decoration: underline;
+}
+
+.dark .prose a {
+  color: #e8912f;
+}
+
+/* Tabelas dentro dos posts, que vêm como HTML solto no markdown.
+   O embrulho .tabela-rolavel é criado pelo parser em lib/blog.ts: sem ele a
+   tabela mais larga empurrava a página inteira no celular. */
+.prose .tabela-rolavel {
+  overflow-x: auto;
+  margin-bottom: 1.5rem;
+  border: 1px solid #d7e3e8;
+  border-radius: 0.75rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+.dark .prose .tabela-rolavel {
+  border-color: #1e4d5f;
+}
+
+.prose .tabela-rolavel table {
+  margin-bottom: 0;
+  border: 0;
+}
+
+.prose table {
+  width: 100%;
+  min-width: 30rem;
+  border-collapse: collapse;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+}
+
+.prose th,
+.prose td {
+  border: 1px solid #d7e3e8;
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  color: #1f2937;
+}
+
+.prose th {
+  background: #eaf2f5;
+  font-weight: 600;
+  color: #123544;
+}

@@ -1,0 +1,37 @@
+{
+  "name": "polisopor",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "dev:celular": "next dev --port 3100 --hostname 0.0.0.0",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "sizes": "python3 scripts/gen-image-sizes.py",
+    "assets": "python3 scripts/build-assets.py",
+    "verify": "node scripts/verify.mjs",
+    "shots": "node scripts/screenshots.mjs",
+    "qa": "node scripts/qa-conteudo.mjs && node scripts/verify.mjs",
+    "qa:navegador": "node scripts/qa-navegador.mjs",
+    "build:preview": "NEXT_PUBLIC_BASE_PATH=/polisopor-site NEXT_PUBLIC_PREVIEW=1 next build"
+  },
+  "dependencies": {
+    "@emailjs/browser": "^4.4.1",
+    "next": "^16.0.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^16.0.0",
+    "playwright": "^1.62.1",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.13",
+    "typescript": "^5.7.2"
+  }
+}

@@ -1,0 +1,152 @@
+# .htaccess do site estático da Polisopor
+#
+# Substitui inteiramente o .htaccess do WordPress. Não sobrou nada de LiteSpeed
+# Cache, Wordfence WAF nem rewrite do WordPress: sem PHP rodando, essas regras
+# não têm o que proteger nem o que reescrever, e o `auto_prepend_file` do
+# Wordfence apontando para um arquivo que não existe mais derrubaria o site.
+#
+# Copiar para a raiz do public_html junto com o conteúdo de out/.
+
+# ----------------------------------------------------------------------
+# HTTPS e domínio canônico
+# ----------------------------------------------------------------------
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+
+  # Força HTTPS. O canonical das páginas e o sitemap usam https://, então
+  # servir em http criaria duas versões do site aos olhos do Google.
+  RewriteCond %{HTTPS} !=on
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+  # www para raiz. O site sempre foi publicado em polisopor.com.br sem www.
+  RewriteCond %{HTTP_HOST} ^www\.polisopor\.com\.br$ [NC]
+  RewriteRule ^ https://polisopor.com.br%{REQUEST_URI} [L,R=301]
+
+  # ------------------------------------------------------------------
+  # Redirecionamentos das páginas que saíram do ar
+  #
+  # As seis páginas de produto do site antigo (/placas-de-isopor/,
+  # /isopor-para-laje/, /forro-de-isopor/, /perolas-de-isopor/,
+  # /xps-poliestireno-extrudado/, /pecas-tecnicas/) e /contato/ continuam
+  # exatamente nas mesmas URLs — por isso não aparecem aqui. Só estas duas
+  # existiam e não têm equivalente no site novo.
+  # ------------------------------------------------------------------
+  RewriteRule ^videos/?$ /produtos/ [L,R=301]
+  RewriteRule ^trabalhe-conosco/?$ /contato/ [L,R=301]
+
+  # Restos do WordPress: quem tiver esses links salvos, ou algum bot varrendo,
+  # vai para a home em vez de bater num 404.
+  RewriteRule ^(wp-admin|wp-login\.php|wp-content|wp-includes|xmlrpc\.php) / [L,R=301]
+
+  # ------------------------------------------------------------------
+  # Barra final
+  #
+  # O build usa trailingSlash, então a URL canônica de toda página termina em
+  # barra e o arquivo fica em <rota>/index.html. Quem chegar em /produtos é
+  # levado para /produtos/, para não existirem duas URLs com o mesmo conteúdo.
+  #
+  # A entrega de /produtos/ -> /produtos/index.html não precisa de regra: quem
+  # faz isso é o DirectoryIndex, declarado abaixo. Uma RewriteRule aqui montaria
+  # o caminho com barra dupla (/produtos//index.html), porque a URI já termina
+  # em barra.
+  # ------------------------------------------------------------------
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_URI} !\.[a-zA-Z0-9]{2,5}$
+  RewriteCond %{REQUEST_URI} !/$
+  RewriteRule ^(.*)$ /$1/ [L,R=301]
+</IfModule>
+
+DirectoryIndex index.html
+ErrorDocument 404 /404.html
+
+# ----------------------------------------------------------------------
+# Tipos de arquivo
+# ----------------------------------------------------------------------
+<IfModule mod_mime.c>
+  AddType image/webp .webp
+  AddType image/avif .avif
+  AddType application/manifest+json .webmanifest
+  AddType font/woff2 .woff2
+  AddType application/xml .xml
+</IfModule>
+
+# ----------------------------------------------------------------------
+# Compressão
+# ----------------------------------------------------------------------
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/css text/xml
+  AddOutputFilterByType DEFLATE application/javascript application/json
+  AddOutputFilterByType DEFLATE application/xml application/rss+xml
+  AddOutputFilterByType DEFLATE application/manifest+json image/svg+xml
+</IfModule>
+
+<IfModule mod_brotli.c>
+  AddOutputFilterByType BROTLI_COMPRESS text/html text/css text/xml
+  AddOutputFilterByType BROTLI_COMPRESS application/javascript application/json
+  AddOutputFilterByType BROTLI_COMPRESS image/svg+xml
+</IfModule>
+
+# ----------------------------------------------------------------------
+# Cache
+# ----------------------------------------------------------------------
+<IfModule mod_expires.c>
+  ExpiresActive On
+
+  # HTML sem cache de longa duração: é o arquivo que muda a cada publicação, e
+  # é ele que aponta para os bundles novos.
+  ExpiresByType text/html "access plus 0 seconds"
+
+  ExpiresByType image/webp "access plus 6 months"
+  ExpiresByType image/jpeg "access plus 6 months"
+  ExpiresByType image/png "access plus 6 months"
+  ExpiresByType image/svg+xml "access plus 6 months"
+  ExpiresByType image/x-icon "access plus 6 months"
+  ExpiresByType font/woff2 "access plus 1 year"
+  ExpiresByType text/css "access plus 1 month"
+  ExpiresByType application/javascript "access plus 1 month"
+</IfModule>
+
+<IfModule mod_headers.c>
+  # Os arquivos de /_next/static/ têm hash do conteúdo no nome: quando o
+  # conteúdo muda, o nome muda também. Podem ser guardados para sempre.
+  <If "%{REQUEST_URI} =~ m#^/_next/static/#">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </If>
+
+  # HTML é revalidado a cada visita: é o arquivo que aponta para os bundles, e
+  # depois de uma publicação ele precisa ser o primeiro a chegar atualizado.
+  <FilesMatch "\.html$">
+    Header set Cache-Control "public, max-age=0, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
+# ----------------------------------------------------------------------
+# Cabeçalhos de segurança
+# ----------------------------------------------------------------------
+<IfModule mod_headers.c>
+  # Impede que o site seja carregado dentro de um iframe de outro domínio.
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+
+  # HSTS: só ativar depois de confirmar que o HTTPS está funcionando em todos os
+  # subdomínios, porque o navegador passa a recusar http por dois anos.
+  # Header always set Strict-Transport-Security "max-age=63072000; includeSubDomains"
+</IfModule>
+
+# ----------------------------------------------------------------------
+# Bloqueios
+# ----------------------------------------------------------------------
+# Os payloads RSC do Next (index.txt) trazem o texto integral da página. O
+# robots.txt pede para não indexar; aqui eles ficam efetivamente inacessíveis.
+<FilesMatch "^index\.txt$|^__next.*\.txt$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+</FilesMatch>
+
+# Diretórios sem index não devem listar o conteúdo.
+Options -Indexes
